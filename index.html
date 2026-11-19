@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dragon’s Hoard</title>
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#000000">
+<style>
+:root{--bg:#000000;--btn:#004fbf;--bd:#888888;--tx:#e8ecf4;--btx:#e8ecf4;--lbl:#f0f0f0;--ini:#f2b33d;--acc:#f2b33d;--fs:16px;--ts:18px;--card:color-mix(in srgb,var(--bg),var(--tx) 7%);--mu:color-mix(in srgb,var(--tx),var(--bg) 40%);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:var(--fs)/1.35 system-ui,-apple-system,Roboto,sans-serif}
+body{padding:0 0 calc(env(safe-area-inset-bottom) + 30px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--btn);color:var(--btx);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;min-height:40px}
+button:active{filter:brightness(1.3)}
+input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;width:100%;min-width:0;color:var(--tx)}
+input[type=color]{width:46px;padding:2px;height:40px;flex:none}
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--bd);padding:calc(8px + env(safe-area-inset-top)) 10px 8px;display:flex;align-items:center;gap:8px}
+h1{flex:1;margin:0;font-size:var(--ts);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+h2{font-size:var(--ts);margin:18px 0 8px}
+.ico{font-size:22px;min-width:44px;padding:4px}
+.pri{background:#f2b33d;color:#1a1405;border-color:#f2b33d;font-weight:700}
+.dng{border-color:#e0594f}
+.pad{padding:12px}.mu{color:var(--mu)}
+.big{width:100%;min-height:58px;font-size:var(--ts);font-weight:600}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.btns>*{flex:1 1 auto}
+.card{background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--bd);border-radius:10px;margin:0 0 10px}
+.hd{display:flex;align-items:center;gap:10px;padding:12px}
+.nm{flex:1;min-width:0}.nm b{display:block;font-size:var(--ts);overflow-wrap:anywhere}
+.nm small{display:block;color:var(--mu)}
+.ed{padding:0 12px 12px;border-top:1px solid var(--bd);padding-top:12px}
+.fr{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--lbl)}
+.fr>span{flex:0 0 auto}.fr>input,.fr>select{flex:1;width:auto}
+.fr.col{align-items:stretch;flex-direction:column;gap:4px}
+.fr>.gsr{display:flex;flex:1 1 0;gap:6px;min-width:0}.gsr input{text-align:center;flex:1;width:auto}.gsr button{min-width:44px;padding:4px;font-size:20px}
+.cf{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--tx);margin-bottom:8px}.cf span{display:flex;gap:6px;width:62%}
+.res{padding:12px;display:grid;gap:4px}
+.res .xp{font-size:1.25em}.res b,.val{color:var(--ini);font-weight:700}
+.sp{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+#modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
+#modal[hidden]{display:none}
+.mb{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:16px;width:100%;max-width:420px}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;text-align:center;max-width:90%}
+#toast.on{opacity:1}
+textarea{min-height:90px}
+</style></head>
+<body>
+<header id="hdr"></header><main id="app"></main>
+<div id="modal" hidden></div><div id="toast" role="status"></div>
+<input id="file" type="file" accept=".json,application/json" hidden>
+<script src="treasure-engine.js"></script>
+<script>
+const KEY='dragons-hoard-v1',$=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const cl=(v,a,b,d)=>{v=parseInt(v);return isNaN(v)?d:Math.min(b,Math.max(a,v))};
+const DH=window.DragonsHoard;
+const fmt=n=>Number(n).toLocaleString('it-IT',{maximumFractionDigits:2});
+const fl2=n=>Math.floor(n*100+1e-9)/100;
+const DEF={settings:{bg:'#000000',btn:'#004fbf',bd:'#888888',tx:'#e8ecf4',btx:'#e8ecf4',lbl:'#f0f0f0',ini:'#f2b33d',fs:16,ts:18},treasures:{}};
+// Per aggiungere un tema basta aggiungere una voce qui
+const THEMES=[
+ {id:'default',name:'Predefinito',c:{bg:'#000000',btn:'#004fbf',bd:'#888888',tx:'#e8ecf4',btx:'#e8ecf4',lbl:'#f0f0f0',ini:'#f2b33d'}},
+ {id:'scroll',name:'Pergamena',c:{bg:'#d0d0a0',btn:'#f0f0b0',bd:'#500000',tx:'#400000',btx:'#400000',lbl:'#400000',ini:'#400000'}},
+ {id:'light',name:'Chiaro',c:{bg:'#e0e0e0',btn:'#ffffff',bd:'#888888',tx:'#000000',btx:'#000000',lbl:'#000000',ini:'#555555'}},
+ {id:'dark',name:'Scuro',c:{bg:'#000000',btn:'#222222',bd:'#888888',tx:'#e8ecf4',btx:'#e8ecf4',lbl:'#f0f0f0',ini:'#f0f0f0'}}];
+const COLS=[['Sfondo','bg'],['Pulsanti','btn'],['Bordi','bd'],['Testo','tx'],['Testo dei pulsanti','btx'],['Etichette dei campi','lbl'],['Valori evidenziati','ini']];
+const MONETE=[['mr','Monete di rame (MR)'],['ma','Monete d’argento (MA)'],['mo','Monete d’oro (MO)'],['mp','Monete di platino (MP)']];
+const OGG=[['comuni','Oggetti comuni'],['minori','Oggetti magici minori'],['medi','Oggetti magici medi'],['maggiori','Oggetti magici maggiori']];
+const n0=v=>Math.max(0,Math.floor(Number(v))||0);
+function fixT(t){if(!t||typeof t!=='object')return null;const g=DH.interpretaGS(t.gs),m=t.monete||{},o=t.oggetti||{};
+ return{id:uid(),name:String(t.name||'Tesoro').slice(0,80),auto:!!t.auto,created:isNaN(Date.parse(t.created))?new Date().toISOString():t.created,gs:g.etichetta,
+ part:Math.max(1,n0(t.part)),molt:Math.max(1,n0(t.molt)),xp:n0(t.xp),val:n0(t.val),
+ monete:{mr:n0(m.mr),ma:n0(m.ma),mo:n0(m.mo),mp:n0(m.mp)},gemme:n0(t.gemme),arte:n0(t.arte),
+ oggetti:{comuni:n0(o.comuni),minori:n0(o.minori),medi:n0(o.medi),maggiori:n0(o.maggiori)},notes:String(t.notes||'').slice(0,5000)}}
+const norm=d=>{const s={...DEF.settings,...(d&&d.settings)};
+ for(const k of['bg','btn','bd','tx','btx','lbl','ini'])if(!/^#[0-9a-f]{6}$/i.test(s[k]))s[k]=DEF.settings[k];
+ s.fs=cl(s.fs,10,40,16);s.ts=cl(s.ts,10,40,18);const tr={};
+ Object.values((d&&d.treasures)||{}).forEach(x=>{const t=fixT(x);if(t){t.id=x.id&&!tr[x.id]?String(x.id):t.id;tr[t.id]=t}});
+ return{settings:s,treasures:tr}};
+let S;try{S=norm(JSON.parse(localStorage.getItem(KEY))||{})}catch(e){S=norm({})}
+let V={v:'home'},H=[],OPEN=new Set(),tt,GF={gs:'1',part:4,molt:1};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Impossibile salvare i dati (memoria bloccata o piena)')}}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
+const closeModal=()=>{const m=$('#modal');if(m.hidden)return false;m.hidden=true;m.innerHTML='';return true};
+function ask(msg,cb,ok='Elimina'){const m=$('#modal');
+ m.innerHTML=`<div class="mb"><p>${esc(msg)}</p><div class="btns"><button id="mc">Annulla</button><button id="mo" class="${ok==='Elimina'?'dng':'pri'}">${esc(ok)}</button></div></div>`;m.hidden=false;
+ $('#mc').onclick=()=>closeModal();$('#mo').onclick=()=>{closeModal();cb()}}
+const uniq=(n,o)=>{const a=Object.values(o).map(x=>x.name);while(a.includes(n))n+=' - copia';return n};
+// Nome automatico: "Tesoro GS n", poi "Tesoro GS n (2)", "(3)", ...
+function autoName(gs,list){const b='Tesoro GS '+gs,names=new Set(list.map(x=>x.name));if(!names.has(b))return b;let p=2;while(names.has(`${b} (${p})`))p++;return`${b} (${p})`}
+function applyStyle(){const s=S.settings,r=document.documentElement.style;['bg','btn','bd','tx','btx','lbl','ini'].forEach(k=>r.setProperty('--'+k,s[k]));
+ const n=parseInt(s.bg.slice(1),16);r.setProperty('--acc',(0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255))/255>0.6?'#8a5a00':'#f2b33d');
+ r.setProperty('--fs',s.fs+'px');r.setProperty('--ts',s.ts+'px')}
+function commit(){save();render()}
+// navigazione (tasto Indietro di Android supportato)
+function go(v,id){H.push(V);V={v,id};OPEN=new Set();history.pushState({},'');scrollTo(0,0);render()}
+onpopstate=()=>{V=H.pop()||{v:'home'};OPEN=new Set();render()};
+
+// ---- tesoro: parti calcolate ----
+const coinMO=t=>(t.monete.mr+t.monete.ma*10+t.monete.mo*100+t.monete.mp*1000)/100;
+function paintDerived(){const t=S.treasures[V.id];if(!t)return;
+ const aTesta=fl2(t.val/t.part);
+ $('#d1').innerHTML=`<div class="card"><div class="res"><div class="xp">Punti Esperienza Totali: <b>${fmt(t.xp)}</b></div>
+ <div class="mu">(GS: ${esc(t.gs)}; partecipanti: ${t.part})</div>
+ <div>Punti Esperienza individuali: <b>${fmt(Math.floor(t.xp/t.part))}</b></div>
+ <div>Valore medio del tesoro per GS ${esc(t.gs)}: <b>${fmt(t.val)} MO</b> (${fmt(aTesta)} MO a testa, arrotondato per difetto${t.molt>1?`; moltiplicatore del tesoro, già applicato: ×${t.molt}`:''})</div>
+ <div>Valore delle monete trovate: <b>${fmt(fl2(coinMO(t)))} MO</b></div></div></div>`;
+ const parts=MONETE.map(([k,l])=>[k.toUpperCase(),t.monete[k]]).filter(x=>x[1]>0);
+ $('#d2').innerHTML=parts.length?`<div class="card"><div class="res"><div><b>Suddivisione delle monete (${t.part} partecipanti)</b></div>${parts.map(([n,v])=>{const q=Math.floor(v/t.part),r=v%t.part;return`<div class="sp"><span>${n}: ${fmt(v)} in tutto</span><span><b>${fmt(q)}</b> a testa${r?` (avanzo: ${r})`:''}</span></div>`}).join('')}</div></div>`:'<p class="mu">Nessuna moneta da dividere.</p>'}
+const nrow=(l,k,v)=>`<label class="fr"><span>${l}</span><input type="number" inputmode="numeric" min="0" data-sel data-t="${k}" value="${v}"></label>`;
+
+function render(){
+ const y=scrollY;let v=V.v,t='Dragon’s Hoard',h='';
+ if(v==='treasure'&&!S.treasures[V.id]){V={v:'home'};v='home'}
+ if(v==='home'){
+  const L=Object.values(S.treasures).sort((a,b)=>b.created.localeCompare(a.created));
+  h=`<div class="pad"><p class="mu" style="margin:0 0 12px">Generatore di tesori per Pathfinder</p>
+  <button class="big pri" data-a="gen">Genera nuovo tesoro</button>
+  <div class="btns"><button data-a="nav" data-id="settings">Impostazioni</button><button data-a="nav" data-id="data">Gestisci Dati</button></div>
+  <h2>Ultimi tesori</h2>${L.map(x=>`<div class="card"><div class="hd" data-a="open" data-id="${x.id}"><div class="nm"><b>${esc(x.name)}</b><small>GS ${esc(x.gs)} · ${x.part} partecipanti${x.molt>1?' · ×'+x.molt:''} · ${new Date(x.created).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</small></div><button class="dng" data-a="del" data-id="${x.id}">Elimina</button></div></div>`).join('')||'<p class="mu">Nessun tesoro salvato.</p>'}</div>`}
+ else if(v==='gen'){t='Nuovo tesoro';
+  h=`<div class="pad"><label class="fr"><span>Grado di Sfida</span><span class="gsr"><button data-a="gsm" aria-label="GS precedente">−</button><input id="f-gs" data-sel value="${esc(GF.gs)}" inputmode="text" autocomplete="off"><button data-a="gsp" aria-label="GS successivo">+</button></span></label>
+  <label class="fr"><span>Numero di partecipanti</span><input id="f-part" type="number" inputmode="numeric" min="1" data-sel value="${GF.part}"></label>
+  <label class="fr"><span>Moltiplicatore del tesoro</span><input id="f-molt" type="number" inputmode="numeric" min="1" data-sel value="${GF.molt}"></label>
+  <p class="mu"><b>Nota:</b> <i>non assegnare Punti Esperienza per GS inferiori di 10 al livello di un personaggio.</i></p>
+  <button class="big pri" data-a="make">Genera</button></div>`}
+ else if(v==='treasure'){const x=S.treasures[V.id];t=x.name;
+  h=`<div class="pad"><label class="fr"><span>Nome</span><input data-t="name" value="${esc(x.name)}" maxlength="80"></label>
+  <div id="d1"></div>${nrow('Partecipanti','part',x.part)}
+  <h2>Monete</h2>${MONETE.map(([k,l])=>nrow(l,'m:'+k,x.monete[k])).join('')}<div id="d2"></div>
+  <h2>Beni</h2>${nrow('Gemme','gemme',x.gemme)}${nrow('Oggetti d’arte','arte',x.arte)}
+  <h2>Oggetti</h2>${OGG.map(([k,l])=>nrow(l,'o:'+k,x.oggetti[k])).join('')}
+  <h2>Note</h2><textarea data-t="notes" placeholder="Annotazioni sul tesoro">${esc(x.notes)}</textarea>
+  <div class="btns" style="margin-top:16px"><button class="dng" data-a="delcur">Elimina questo tesoro</button></div></div>`}
+ else if(v==='settings'){t='Impostazioni';const s=S.settings;
+  h=`<div class="pad"><div class="card"><div class="hd" data-a="tog" data-id="themes"><div class="nm"><b>Temi</b></div></div>${OPEN.has('themes')?`<div class="ed"><div class="btns">${THEMES.map(x=>`<button data-a="theme" data-id="${x.id}" class="${Object.keys(x.c).every(k=>s[k]===x.c[k])?'pri':''}">${x.name}</button>`).join('')}</div></div>`:''}</div>
+  <h2>Colori</h2>${COLS.map(([l,k])=>`<label class="cf">${l}<span><input type="color" data-s="${k}" value="${s[k]}"><input data-s="${k}" value="${s[k]}" maxlength="7"></span></label>`).join('')}
+  <h2>Dimensione del testo</h2>
+  <label class="fr col">Testo (10-40 px)<input type="number" inputmode="numeric" data-sel data-s="fs" value="${s.fs}"></label>
+  <label class="fr col">Titoli (10-40 px)<input type="number" inputmode="numeric" data-sel data-s="ts" value="${s.ts}"></label>
+  <button class="dng" data-a="sreset" style="width:100%">Ripristina colori e dimensioni</button></div>`}
+ else if(v==='data'){t='Gestisci Dati';
+  h=`<div class="pad"><p class="mu">Tutti i dati sono salvati solo su questo dispositivo. Esporta regolarmente un backup.</p><h2>Esporta</h2>
+  <div class="btns"><button data-a="ex">Salva file</button><button data-a="sh">Condividi</button><button data-a="cp">Copia testo</button></div>
+  <h2>Importa</h2><label class="fr col">Modalità<select id="mode"><option value="merge">Unisci ai dati attuali (i nomi duplicati ricevono “ - copia”)</option><option value="replace">Sostituisci tutti i dati attuali</option></select></label>
+  <div class="btns"><button data-a="impf">Importa da file</button></div>
+  <label class="fr col">Oppure incolla il testo del backup<textarea id="tx"></textarea></label><div class="btns"><button data-a="impt">Importa testo incollato</button></div></div>`}
+ $('#hdr').innerHTML=(v!=='home'?'<button class="ico" data-a="back" aria-label="Indietro">‹</button>':'')+`<h1>${esc(t)}</h1>`;
+ $('#app').innerHTML=h;if(v==='treasure'){paintDerived()}scrollTo(0,y)}
+
+// ---- generazione ----
+function make(){
+ const g=DH.interpretaGS($('#f-gs').value),part=cl($('#f-part').value,1,9999,4),molt=cl($('#f-molt').value,1,9999,1);
+ const r=DH.generaTesoro({gs:g.etichetta,partecipanti:part,moltiplicatore:molt});
+ const t={id:uid(),name:autoName(g.etichetta,Object.values(S.treasures)),auto:true,created:new Date().toISOString(),gs:g.etichetta,part,molt,xp:r.esperienza,val:r.valoreTesoro,
+  monete:r.monete,gemme:r.beni.gemme,arte:r.beni.oggettiArte,oggetti:r.oggetti,notes:''};
+ S.treasures[t.id]=t;save();V={v:'treasure',id:t.id};OPEN=new Set();history.replaceState({},'');scrollTo(0,0);render()}
+
+// ---- click ----
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
+ switch(a){
+ case'back':history.back();return;
+ case'nav':return go(id);
+ case'gen':GF={gs:'1',part:4,molt:1};return go('gen');
+ case'open':return go('treasure',id);
+ case'tog':OPEN.has(id)?OPEN.delete(id):OPEN.add(id);return render();
+ case'gsm':case'gsp':{const i=$('#f-gs');i.value=DH.scalaGS(i.value,a==='gsp'?1:-1);return}
+ case'make':return make();
+ case'del':{const x=S.treasures[id];return ask(`Eliminare “${x.name}”?`,()=>{delete S.treasures[id];commit()})}
+ case'delcur':{const x=S.treasures[V.id];return ask(`Eliminare “${x.name}”?`,()=>{delete S.treasures[V.id];save();history.back()})}
+ case'theme':{const x=THEMES.find(z=>z.id===id);Object.assign(S.settings,x.c);applyStyle();return commit()}
+ case'sreset':return ask('Ripristinare tutti i colori e le dimensioni del testo ai valori predefiniti?',()=>{S.settings=clone(DEF.settings);applyStyle();commit()},'Ripristina');
+ case'ex':return NAT()?nativeShare(dump(),'DragonsHoard-backup.json'):download(dump(),'DragonsHoard-backup.json');
+ case'sh':return share(dump(),'DragonsHoard-backup.json');
+ case'cp':return copyText(dump());
+ case'impf':return $('#file').click();
+ case'impt':return imp($('#tx').value);
+ }});
+
+// ---- modifiche ----
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset;
+ if(d.s){let k=d.s,v=t.value;if(k==='fs'||k==='ts')S.settings[k]=cl(v,10,40,k==='fs'?16:18);
+  else{if(!/^#[0-9a-f]{6}$/i.test(v))return render();S.settings[k]=v.toLowerCase()}applyStyle();return commit()}
+ if(d.t!==undefined){const x=S.treasures[V.id];if(!x)return;const k=d.t;
+  if(k==='name'){const v=t.value.trim(),others=Object.values(S.treasures).filter(z=>z!==x);x.auto=!v;x.name=v||autoName(x.gs,others);t.value=x.name;$('#hdr h1').textContent=x.name}
+  else if(k==='notes')x.notes=t.value;
+  else{const v=n0(t.value);t.value=v;
+   if(k==='part'){x.part=Math.max(1,v);t.value=x.part}
+   else if(k.startsWith('m:'))x.monete[k.slice(2)]=v;
+   else if(k.startsWith('o:'))x.oggetti[k.slice(2)]=v;
+   else x[k]=v;paintDerived()}
+  return save()}});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='f-gs')t.value=DH.interpretaGS(t.value).etichetta;
+ if(t.id==='f-part')t.value=cl(t.value,1,9999,4);
+ if(t.id==='f-molt')t.value=cl(t.value,1,9999,1)});
+
+// selezione automatica del contenuto dei campi numerici al tap
+let selNext=null;
+document.addEventListener('focusin',e=>{const t=e.target;if(t.matches&&t.matches('input[data-sel]')){selNext=t;setTimeout(()=>{try{t.select()}catch(x){}},0)}});
+document.addEventListener('focusout',()=>{selNext=null});
+document.addEventListener('mouseup',e=>{const t=e.target;if(selNext&&t===selNext){selNext=null;setTimeout(()=>{try{t.select()}catch(x){}},0)}});
+
+// ---- backup ----
+const NAT=()=>!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const dump=()=>JSON.stringify({app:'dragons-hoard',v:1,data:S},null,1);
+function download(txt,fn){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=fn;document.body.appendChild(a);a.click();a.remove();toast('File salvato')}
+async function nativeShare(txt,fn){try{const P=Capacitor.Plugins,r=await P.Filesystem.writeFile({path:fn,data:txt,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:fn,url:r.uri,dialogTitle:fn})}catch(e){if(!/cancel/i.test(String(e&&e.message||e)))toast('Condivisione non disponibile: usa Copia testo')}}
+async function share(txt,fn){if(NAT())return nativeShare(txt,fn);
+ try{const f=new File([txt],fn,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else await navigator.share({text:txt})}catch(e){if(e.name!=='AbortError')toast('Condivisione non disponibile: usa Salva file')}}
+function copyText(txt){if(NAT())return Capacitor.Plugins.Clipboard.write({string:txt}).then(()=>toast('Backup copiato'));
+ return navigator.clipboard.writeText(txt).then(()=>toast('Backup copiato'),()=>{const a=$('#tx');a.value=txt;a.select();toast('Copia il testo selezionato')})}
+function imp(txt){let d;try{d=JSON.parse(txt)}catch(e){}
+ const s=d&&d.data;if(!s||typeof s!=='object'||!(s.settings||s.treasures))return toast('Backup non valido');const n=norm(clone(s));
+ if((($('#mode')||{}).value)==='replace')return ask('Sostituire TUTTI i dati attuali con quelli importati?',()=>{S=n;applyStyle();commit();toast('Dati sostituiti')},'Sostituisci');
+ for(const x of Object.values(n.treasures)){x.id=uid();x.name=uniq(x.name,S.treasures);S.treasures[x.id]=x}
+ commit();toast('Dati uniti')}
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>imp(r.result);r.readAsText(f);e.target.value=''};
+
+if(NAT()&&Capacitor.Plugins.App)Capacitor.Plugins.App.addListener('backButton',()=>{if(closeModal())return;if(H.length)history.back();else Capacitor.Plugins.App.minimizeApp()});
+applyStyle();render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>

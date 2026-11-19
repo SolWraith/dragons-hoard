@@ -1,0 +1,6 @@
+{
+  "appId": "io.github.solwraith.dragonshoard",
+  "appName": "Dragon’s Hoard",
+  "webDir": "www",
+  "android": { "backgroundColor": "#000000" }
+}
