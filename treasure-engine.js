@@ -147,13 +147,89 @@
       valoreTesoroATesta: formatta(valATesta),
       monete: { mr: mr, ma: ma, mo: mo, mp: mp },
       valoreMoneteMO: valoreMoneteMO,
-      beni: { gemme: gemme, oggettiArte: oggArte },
+      beni: { gemme: gemme, oggettiArte: oggArte, listaGemme: generaGemme(gemme, rng), listaArte: generaOggettiArte(oggArte, rng) },
       oggetti: { comuni: comuni, minori: minori, medi: medi, maggiori: maggiori },
       categoriaOggetti: categoria
     };
   }
 
-  const API = { generaTesoro, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
+  // ---- Tabelle, gemme e oggetti d'arte ----
+  const ROMANI = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+  // valore = n dadi a "facce" facce + base, per categoria
+  const GEMME_VAL = [[4, 4, 0], [1, 64, 16], [1, 121, 39], [1, 640, 160], [1, 1201, 399], [1, 6400, 1600], [1, 8000, 4000], [1, 64000, 16000], [1, 120000, 40000], [1, 640000, 160000]];
+  const ARTE_VAL = [[1, 90, 10], [1, 150, 30], [1, 500, 100], [1, 900, 100], [1, 1000, 200], [1, 1500, 300], [1, 2000, 400], [1, 2500, 500], [1, 3000, 1000], [1, 5000, 1000],
+    [1, 6000, 2000], [1, 10000, 2000], [1, 20000, 4000], [1, 30000, 10000], [1, 90000, 30000], [1, 200000, 40000], [1, 300000, 100000], [1, 900000, 300000], [1, 2000000, 400000], [1, 4500000, 500000]];
+  const MAX_GEMME = 50, MAX_ARTE = 20; // limiti dell'elenco dettagliato (come nelle macro originali)
+
+  function tiraEspressione(expr, rng) { // "1d4+3"
+    const m = /^(\d+)d(\d+)([+-]\d+)?$/.exec(String(expr).replace(/\s+/g, ''));
+    if (!m) return 1;
+    let s = Number(m[3] || 0);
+    for (let k = 0; k < Number(m[1]); k++) s += Math.floor(rng() * Number(m[2])) + 1;
+    return s;
+  }
+
+  /** Estrae una riga da una tabella; null se la tabella non esiste */
+  function pescaTabella(nome, rng, roll) {
+    const t = (root.DH_TABELLE || {})[nome];
+    if (!t) return null;
+    const n = roll ? tiraEspressione(roll, rng) : Math.floor(rng() * t.d) + 1;
+    const riga = t.r.find(x => n >= x[0] && n <= x[1]);
+    return riga ? riga[2] : '';
+  }
+
+  /** Risolve i segnaposto {{...}} dei testi delle tabelle */
+  function risolvi(testo, rng, prof) {
+    prof = prof || 0;
+    if (prof > 8) return testo;
+    const mancante = n => '[tabella “' + n + '” mancante]';
+    const out = String(testo).replace(/\{\{(.*?)\}\}/g, (_, tok) => {
+      const i = tok.indexOf(':'), cmd = tok.slice(0, i), arg = tok.slice(i + 1);
+      if (cmd === '50') return rng() < 0.5 ? arg : '';
+      if (cmd === 'scelta') { const o = arg.split('|'); return o[Math.floor(rng() * o.length)]; }
+      if (cmd === 'taglia') {
+        const v = pescaTabella('Taglia Casuale', rng, arg);
+        if (v === null) return mancante('Taglia Casuale');
+        return (v === 'Media' || v === '') ? '' : 'di taglia ' + v;
+      }
+      if (cmd === 'tab') {
+        const p = arg.split('|'), nome = p[0];
+        let roll = null, noend = null;
+        p.slice(1).forEach(x => { if (x.startsWith('roll=')) roll = x.slice(5); if (x.startsWith('noend=')) noend = x.slice(6); });
+        let v = null;
+        for (let k = 0; k < 50; k++) {
+          v = pescaTabella(nome, rng, roll);
+          if (v === null) return mancante(nome);
+          if (!(noend && v.endsWith(noend))) break;
+        }
+        return risolvi(v, rng, prof + 1);
+      }
+      return '';
+    });
+    return prof === 0 ? out.replace(/\s{2,}/g, ' ').replace(/\s+([,;:.)])/g, '$1').trim() : out;
+  }
+
+  function generaVoci(n, rng, selettore, prefisso, valori) {
+    const out = [];
+    for (let k = 0; k < n; k++) {
+      const sel = parseInt(pescaTabella(selettore, rng), 10);
+      if (!sel || !valori[sel - 1]) { out.push({ nome: '(tabelle non disponibili)', val: 0, cat: 'I' }); continue; }
+      const v = valori[sel - 1];
+      let val = v[2];
+      for (let j = 0; j < v[0]; j++) val += Math.floor(rng() * v[1]) + 1;
+      out.push({ nome: risolvi(pescaTabella(prefisso + sel, rng) || '', rng), val: val, cat: ROMANI[sel - 1] });
+    }
+    return out;
+  }
+  const generaGemme = (n, rng) => generaVoci(Math.min(n, MAX_GEMME), rng || Math.random, 'Gemme', 'Gemma', GEMME_VAL);
+  const generaOggettiArte = (n, rng) => generaVoci(Math.min(n, MAX_ARTE), rng || Math.random, 'Oggetti Arte', 'Oggetto Arte', ARTE_VAL);
+  function riepilogo(lista) {
+    let tot = 0, alta = 0;
+    lista.forEach(x => { tot += x.val; alta = Math.max(alta, ROMANI.indexOf(x.cat) + 1); });
+    return { totale: tot, categoriaAlta: ROMANI[alta - 1] || 'I' };
+  }
+
+  const API = { generaTesoro, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.DragonsHoard = Object.assign(root.DragonsHoard || {}, API);
 })(typeof window !== 'undefined' ? window : globalThis);
