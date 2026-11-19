@@ -19,6 +19,7 @@ jobs:
         run: |
           mkdir www
           cp index.html manifest.json icon-192.png icon-512.png treasure-engine.js www/
+          cp -r data www/
           sed -i "s/navigator.serviceWorker.register('sw.js')/Promise.resolve()/" www/index.html
       - run: npm install
       - run: npx cap add android
