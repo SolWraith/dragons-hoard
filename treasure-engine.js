@@ -229,7 +229,37 @@
     return { totale: tot, categoriaAlta: ROMANI[alta - 1] || 'I' };
   }
 
-  const API = { generaTesoro, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
+  /** Suggerimenti per un oggetto d'arte personalizzato (macro "Generatore Di Oggetti D'Arte Casuali").
+   *  Mantiene valore e categoria dell'oggetto che sostituisce. */
+  function generaPersonalizzato(val, cat, rng) {
+    rng = rng || Math.random;
+    const P = 'Oggetti Arte Casuali';
+    const pesca = nome => pescaTabella(nome, rng);
+    const eq = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+    const tipo = pesca(P);
+    let spec = 0;
+    // stessi passaggi, nello stesso ordine, della macro originale
+    [['t', 'Arredamento'], ['t', 'Gioco'], ['t', 'Gioiello'], ['t', 'Opera Artistica'], ['s', 'Solido Geometrico'],
+     ['t', 'Strumento Musicale'], ['t', 'Utensile'], ['t', 'Vestito'], ['s', 'Armatura'], ['s', 'Scudo'], ['s', 'Arma']
+    ].forEach(p => {
+      if (eq(p[0] === 't' ? tipo : spec, p[1])) { const v = pesca(P + ' ' + p[1]); if (v !== null) spec = v; }
+    });
+    const materiale = (base, passi) => {
+      let m = pesca(P + ' ' + base);
+      passi.forEach(p => { if (m !== null && eq(m, p[0])) { const v = pesca(P + ' ' + p[1]); if (v !== null) m = v; } });
+      return m;
+    };
+    const ROB = [['Avorio o Corno', 'Avorio'], ['Legno Duro', 'Legno Duro'], ['Legno Tenero', 'Legno Tenero'], ['Metallo', 'Metallo'], ['Pietra', 'Pietra']];
+    const FRA = ['Pelle', 'Pelle Esotica', 'Pelliccia', 'Pelliccia Esotica', 'Piume', 'Piume Esotiche', 'Tessuto'].map(x => [x, x]);
+    const r = x => risolvi(x === null ? '(tabella non disponibile)' : x, rng);
+    const opz = [0, 1, 2].map(() => ({
+      rob: r(materiale('Materiale Robusto', ROB)), fra: r(materiale('Materiale Fragile', FRA)),
+      scena: r(pesca(P + ' Scene')), abb: r(pesca(P + ' Abbellimento'))
+    }));
+    return { alt: true, nome: 'Oggetto personalizzato', val: val, cat: cat, tipo: r(tipo), spec: r(spec === 0 ? '—' : spec), opz: opz, dim: r(pesca(P + ' Dimensioni')) };
+  }
+
+  const API = { generaTesoro, generaPersonalizzato, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.DragonsHoard = Object.assign(root.DragonsHoard || {}, API);
 })(typeof window !== 'undefined' ? window : globalThis);
