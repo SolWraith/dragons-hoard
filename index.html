@@ -38,8 +38,27 @@ h2{font-size:var(--ts);margin:18px 0 8px}
 .fr>.gsr{display:flex;flex:1 1 0;gap:6px;min-width:0}.gsr input{text-align:center;flex:1;width:auto}.gsr button{min-width:44px;padding:4px;font-size:20px}
 .cf{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--tx);margin-bottom:8px}.cf span{display:flex;gap:6px;width:62%}
 .res{padding:12px;display:grid;gap:4px}
-.res .xp{font-size:1.25em}.res b,.val{color:var(--ini);font-weight:700}
+.res b,.val{color:var(--ini);font-weight:700}
 .sp{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+/* schermata del tesoro: più compatta (14px con testo 16) */
+.tz{font-size:calc(var(--fs) - 2px);line-height:1.25}
+.tz .fr{margin-bottom:4px;gap:6px}
+.tz input,.tz textarea{padding:3px 6px;min-height:30px;border-radius:6px}
+.tz textarea{min-height:56px}
+.tz button{min-height:32px;padding:3px 10px}
+.tz .btns{gap:6px;margin:0 0 6px}
+.tz .card{margin:0 0 6px;border-radius:8px}
+.tz .res{padding:5px 10px;gap:1px}.tz .bx{padding:6px 10px}
+.tz .it{padding:1px 0}.tz .sp{padding:0}
+.tz .mini{min-height:26px;min-width:30px;padding:2px 5px;margin-right:5px}.tz .mini svg{width:16px}
+.tz .alt{margin:1px 0 6px 6px;padding:3px 0 2px 8px}.tz .opt{padding:2px 0}
+.mini svg{transform:translateX(1.5px)}
+.bx{padding:8px 10px}.hint{color:var(--mu);margin-bottom:6px}.nm2{font-weight:600}.bn{font-weight:700;color:var(--tx)}
+details.card>summary{list-style:none;cursor:pointer;padding:6px 10px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"";flex:none;width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-right:4px}
+details.card[open]>summary::after{transform:rotate(-135deg) translateY(-1px)}
+details.card[open]>summary{border-bottom:1px solid var(--bd)}
 #modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
 #modal[hidden]{display:none}
 .mb{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:16px;width:100%;max-width:420px}
@@ -69,7 +88,7 @@ const THEMES=[
  {id:'dark',name:'Scuro',c:{bg:'#000000',btn:'#222222',bd:'#888888',tx:'#e8ecf4',btx:'#e8ecf4',lbl:'#f0f0f0',ini:'#f0f0f0'}}];
 const COLS=[['Sfondo','bg'],['Pulsanti','btn'],['Bordi','bd'],['Testo','tx'],['Testo dei pulsanti','btx'],['Etichette dei campi','lbl'],['Valori evidenziati','ini']];
 const GEAR='<button class="ico" data-a="nav" data-id="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>';
-const MONETE=[['mr','Monete di rame (MR)'],['ma','Monete d’argento (MA)'],['mo','Monete d’oro (MO)'],['mp','Monete di platino (MP)']];
+const MONETE=[['mp','Monete di platino (MP)'],['mo','Monete d’oro (MO)'],['ma','Monete d’argento (MA)'],['mr','Monete di rame (MR)']];
 const OGG=[['comuni','Oggetti comuni'],['minori','Oggetti magici minori'],['medi','Oggetti magici medi'],['maggiori','Oggetti magici maggiori']];
 const n0=v=>Math.max(0,Math.floor(Number(v))||0);
 const fixAlt=(l,mx)=>Array.isArray(l)?l.slice(0,Math.max(0,mx)).map(x=>{x=x||{};const o=Array.isArray(x.opz)?x.opz:[];const q=v=>String(v||'').slice(0,300);
@@ -80,14 +99,14 @@ function fixT(t){if(!t||typeof t!=='object')return null;const g=DH.interpretaGS(
  return{id:uid(),name:String(t.name||'Tesoro').slice(0,80),auto:!!t.auto,created:isNaN(Date.parse(t.created))?new Date().toISOString():t.created,gs:g.etichetta,
  part:Math.max(1,n0(t.part)),molt:Math.max(1,n0(t.molt)),xp:n0(t.xp),val:n0(t.val),
  monete:{mr:n0(m.mr),ma:n0(m.ma),mo:n0(m.mo),mp:n0(m.mp)},gemme:n0(t.gemme),arte:n0(t.arte),
- oggetti:{comuni:n0(o.comuni),minori:n0(o.minori),medi:n0(o.medi),maggiori:n0(o.maggiori)},gemmeList:fixL(t.gemmeList,DH.MAX_GEMME),arteList:fixL(t.arteList,DH.MAX_ARTE),arteAlt:fixAlt(t.arteAlt,DH.MAX_ARTE-fixL(t.arteList,DH.MAX_ARTE).length),notes:String(t.notes||'').slice(0,5000)}}
+ oggetti:{comuni:n0(o.comuni),minori:n0(o.minori),medi:n0(o.medi),maggiori:n0(o.maggiori)},gemmeList:fixL(t.gemmeList,DH.MAX_GEMME),arteList:fixL(t.arteList,DH.MAX_ARTE),arteAlt:fixAlt(t.arteAlt,DH.MAX_ARTE-fixL(t.arteList,DH.MAX_ARTE).length),comuniList:Array.isArray(t.comuniList)?t.comuniList.slice(0,DH.MAX_COMUNI).map(x=>String(x||'').slice(0,400)):[],notes:String(t.notes||'').slice(0,5000)}}
 const norm=d=>{const s={...DEF.settings,...(d&&d.settings)};
  for(const k of['bg','btn','bd','tx','btx','lbl','ini'])if(!/^#[0-9a-f]{6}$/i.test(s[k]))s[k]=DEF.settings[k];
  s.fs=cl(s.fs,10,40,16);s.ts=cl(s.ts,10,40,18);const tr={};
  Object.values((d&&d.treasures)||{}).forEach(x=>{const t=fixT(x);if(t){t.id=x.id&&!tr[x.id]?String(x.id):t.id;tr[t.id]=t}});
  return{settings:s,treasures:tr}};
 let S;try{S=norm(JSON.parse(localStorage.getItem(KEY))||{})}catch(e){S=norm({})}
-let fileMode='backup',V={v:'home'},H=[],OPEN=new Set(),tt,GF={gs:'1',part:4,molt:1};
+let fileMode='backup',V={v:'home'},H=[],OPEN=new Set(),TS={},tt,GF={gs:'1',part:4,molt:1};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Impossibile salvare i dati (memoria bloccata o piena)')}}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
 const closeModal=()=>{const m=$('#modal');if(m.hidden)return false;m.hidden=true;m.innerHTML='';return true};
@@ -102,20 +121,21 @@ function applyStyle(){const s=S.settings,r=document.documentElement.style;['bg',
  r.setProperty('--fs',s.fs+'px');r.setProperty('--ts',s.ts+'px')}
 function commit(){save();render()}
 // navigazione (tasto Indietro di Android supportato)
-function go(v,id){H.push(V);V={v,id};OPEN=new Set();history.pushState({},'');scrollTo(0,0);render()}
-onpopstate=()=>{V=H.pop()||{v:'home'};OPEN=new Set();render()};
+function go(v,id){H.push(V);V={v,id};OPEN=new Set();TS={};history.pushState({},'');scrollTo(0,0);render()}
+onpopstate=()=>{V=H.pop()||{v:'home'};OPEN=new Set();TS={};render()};
 
 // ---- tesoro: parti calcolate ----
 const coinMO=t=>(t.monete.mr+t.monete.ma*10+t.monete.mo*100+t.monete.mp*1000)/100;
+const setH=(sel,h)=>{const e=$(sel);if(e&&e._h!==h){e.innerHTML=h;e._h=h}};
 function paintDerived(){const t=S.treasures[V.id];if(!t)return;
  const aTesta=fl2(t.val/t.part);
- $('#d1').innerHTML=`<div class="card"><div class="res"><div class="xp">Punti Esperienza Totali: <b>${fmt(t.xp)}</b></div>
- <div class="mu">(GS: ${esc(t.gs)}; partecipanti: ${t.part})</div>
- <div>Punti Esperienza individuali: <b>${fmt(Math.floor(t.xp/t.part))}</b></div>
+ const sl=$('#si-l');if(sl)sl.textContent=`GS ${t.gs} - ${t.part} partecipanti - PE e informazioni`;
+ setH('#dI',`<div class="bn">GS: ${esc(t.gs)}; partecipanti: ${t.part}</div>
+ <div>Punti Esperienza Totali: <b>${fmt(t.xp)}</b> (${fmt(Math.floor(t.xp/t.part))} a testa)</div>
  <div>Valore medio del tesoro per GS ${esc(t.gs)}: <b>${fmt(t.val)} MO</b> (${fmt(aTesta)} MO a testa, arrotondato per difetto${t.molt>1?`; moltiplicatore del tesoro, già applicato: ×${t.molt}`:''})</div>
- <div>Valore delle monete trovate: <b>${fmt(fl2(coinMO(t)))} MO</b></div></div></div>`;
- const parts=MONETE.map(([k,l])=>[k.toUpperCase(),t.monete[k]]).filter(x=>x[1]>0);
- $('#d2').innerHTML=parts.length?`<div class="card"><div class="res"><div><b>Suddivisione delle monete (${t.part} partecipanti)</b></div>${parts.map(([n,v])=>{const q=Math.floor(v/t.part),r=v%t.part;return`<div class="sp"><span>${n}: ${fmt(v)} in tutto</span><span><b>${fmt(q)}</b> a testa${r?` (avanzo: ${r})`:''}</span></div>`}).join('')}</div></div>`:'<p class="mu">Nessuna moneta da dividere.</p>'}
+ <div>Valore delle monete trovate: <b>${fmt(fl2(coinMO(t)))} MO</b></div>`);
+ const parts=MONETE.map(([k])=>[k.toUpperCase(),t.monete[k]]).filter(x=>x[1]>0);
+ setH('#dM',parts.length?parts.map(([n,v])=>{const q=Math.floor(v/t.part),r=v%t.part;return`<div class="sp"><span>${n}: <b>${fmt(v)}</b> in tutto</span><span><b>${fmt(q)}</b> a testa${r?` (avanzo: ${r})`:''}</span></div>`}).join(''):'<span class="mu">Nessuna moneta da dividere.</span>')}
 function syncLists(t){let ch=false;
  const g=t.gemmeList,wg=Math.min(t.gemme,DH.MAX_GEMME);
  if(g.length>wg){t.gemmeList=g.slice(0,wg);ch=true}else if(g.length<wg){t.gemmeList=g.concat(DH.generaGemme(wg-g.length));ch=true}
@@ -123,38 +143,50 @@ function syncLists(t){let ch=false;
  const wa=Math.min(t.arte,DH.MAX_ARTE),tot=t.arteList.length+t.arteAlt.length;
  if(tot>wa){let ex=tot-wa;const ra=Math.min(ex,t.arteAlt.length);t.arteAlt=t.arteAlt.slice(0,t.arteAlt.length-ra);ex-=ra;if(ex)t.arteList=t.arteList.slice(0,t.arteList.length-ex);ch=true}
  else if(tot<wa){t.arteList=t.arteList.concat(DH.generaOggettiArte(wa-tot));ch=true}
+ const c=t.comuniList,wc=Math.min(t.oggetti.comuni,DH.MAX_COMUNI);
+ if(c.length>wc){t.comuniList=c.slice(0,wc);ch=true}else if(c.length<wc){t.comuniList=c.concat(DH.generaOggettiComuni(wc-c.length));ch=true}
  return ch}
 const BULB='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>';
 const ROM3=['I','II','III'];
-function arteHTML(t){const N=t.arteList,A=t.arteAlt,all=N.concat(A);if(!all.length)return'';const r=DH.riepilogo(all);
- const head=(x,n)=>`<b>Oggetto d’Arte${all.length>1?' '+n:''}:</b> <span style="font-weight:600">${esc(x.nome)}</span>, ${fmt(x.val)} MO <small class="mu">(Categoria ${x.cat})</small>`;
- return`<div class="card"><div class="res">${N.length?'<div class="mu" style="font-size:.85em">Tocca la lampadina per sostituire un oggetto con i suggerimenti per crearne uno personalizzato (stesso valore).</div>':''}
- ${N.map((x,i)=>`<div class="it"><button class="mini" data-a="conv" data-i="${i}" aria-label="Sostituisci con suggerimenti per un oggetto personalizzato">${BULB}</button>${head(x,i+1)}</div>`).join('')}
- ${A.map((x,j)=>`<div class="it">${head(x,N.length+j+1)}</div><div class="alt"><div class="it"><b>Tipo:</b> ${esc(x.tipo)}</div><div class="it"><b>Specifico:</b> ${esc(x.spec)}</div>
+const numL=(n,tot)=>tot>1?`${n}: `:'';
+const limNote=(c,len)=>c>len?`<div class="mu">Elenco dettagliato limitato ai primi ${len} su ${c}.</div>`:'';
+const totRow=L=>{const r=DH.riepilogo(L);return`<div class="it"><b>Valore totale:</b> ${fmt(r.totale)} MO; <b>Categoria più alta:</b> ${r.categoriaAlta}</div>`};
+function gemmeHTML(t){const L=t.gemmeList;if(!L.length)return'<span class="mu">Nessuna gemma.</span>';
+ return L.map((x,i)=>`<div class="it">${numL(i+1,L.length)}<span class="nm2">${esc(x.nome)}</span>, ${fmt(x.val)} MO <small class="mu">(Categoria ${x.cat})</small></div>`).join('')+(L.length>1?totRow(L):'')+limNote(t.gemme,L.length)}
+function arteHTML(t){const N=t.arteList,A=t.arteAlt,all=N.concat(A);if(!all.length)return'<span class="mu">Nessun oggetto d’arte.</span>';
+ const head=(x,n)=>`${numL(n,all.length)}<span class="nm2">${esc(x.nome)}</span>, ${fmt(x.val)} MO <small class="mu">(Categoria ${x.cat})</small>`;
+ return(N.length?'<div class="mu" style="font-size:.92em">Tocca una lampadina per sostituire l’oggetto corrispondente con una serie di suggerimenti per crearne uno personalizzato (stesso valore in MO).</div>':'')
+ +N.map((x,i)=>`<div class="it"><button class="mini" data-a="conv" data-i="${i}" aria-label="Sostituisci con suggerimenti per un oggetto personalizzato">${BULB}</button>${head(x,i+1)}</div>`).join('')
+ +A.map((x,j)=>`<div class="it">${head(x,N.length+j+1)}</div><div class="alt"><div class="it"><b>Tipo:</b> ${esc(x.tipo)}</div><div class="it"><b>Specifico:</b> ${esc(x.spec)}</div>
   ${x.opz.map((p,k)=>`<div class="opt"><b>Opzione ${ROM3[k]}</b><div>Materiale robusto: ${esc(p.rob)}</div><div>Materiale fragile: ${esc(p.fra)}</div><div>Scena dipinta: ${esc(p.scena)}</div><div>Abbellimento: ${esc(p.abb)}</div></div>`).join('')}
-  <div class="it"><b>Dimensioni:</b> ${esc(x.dim)}</div><div class="mu" style="font-size:.85em">R = Materiale Robusto / F = Materiale Fragile</div></div>`).join('')}
- ${all.length>1?`<div class="it"><b>Valore totale:</b> ${fmt(r.totale)} MO; <b>Categoria più alta:</b> ${r.categoriaAlta}</div>`:''}${t.arte>all.length?`<div class="mu">Elenco dettagliato limitato ai primi ${all.length} su ${t.arte}.</div>`:''}</div></div>`}
-function listHTML(t,c,l,lab){const L=t[l];if(!L.length)return'';const r=DH.riepilogo(L);
- return`<div class="card"><div class="res">${L.map((x,i)=>`<div class="it"><b>${lab}${L.length>1?' '+(i+1):''}:</b> <span style="font-weight:600">${esc(x.nome)}</span>, ${fmt(x.val)} MO <small class="mu">(Categoria ${x.cat})</small></div>`).join('')}${L.length>1?`<div class="it"><b>Valore totale:</b> ${fmt(r.totale)} MO; <b>Categoria più alta:</b> ${r.categoriaAlta}</div>`:''}${t[c]>L.length?`<div class="mu">Elenco dettagliato limitato ai primi ${L.length} su ${t[c]}.</div>`:''}</div></div>`}
-function paintLists(){const t=S.treasures[V.id];if(!t)return;$('#d3').innerHTML=listHTML(t,'gemme','gemmeList','Gemma');$('#d4').innerHTML=arteHTML(t)}
+  <div class="it"><b>Dimensioni:</b> ${esc(x.dim)}</div><div class="mu" style="font-size:.92em">R = Materiale Robusto / F = Materiale Fragile</div></div>`).join('')
+ +(all.length>1?totRow(all):'')+limNote(t.arte,all.length)}
+function comuniHTML(t){const L=t.comuniList;if(!L.length)return'<span class="mu">Nessun oggetto comune.</span>';
+ return L.map((x,i)=>`<div class="it">${numL(i+1,L.length)}<span class="nm2">${esc(x)}</span></div>`).join('')+limNote(t.oggetti.comuni,L.length)}
+const MAGICI=[['minori','Minori'],['medi','Medi'],['maggiori','Maggiori']];
+function magiciHTML(t){const r=MAGICI.filter(([k])=>t.oggetti[k]>0);
+ return r.length?r.map(([k,l])=>`<div class="it">${l}: <b>${t.oggetti[k]}</b></div>`).join(''):'<span class="mu">Nessun oggetto magico.</span>'}
+function paintLists(){const t=S.treasures[V.id];if(!t)return;setH('#dG',gemmeHTML(t));setH('#dA',arteHTML(t));setH('#dC',comuniHTML(t));setH('#dMg',magiciHTML(t))}
 // testo leggibile del tesoro (per "Copia testo")
 function testoTesoro(t){const L=[],aT=fl2(t.val/t.part);
- const lst=(c,l,lab)=>{const A=t[l];A.forEach((x,i)=>L.push(`   ${lab}${A.length>1?' '+(i+1):''}: ${x.nome}, ${fmt(x.val)} MO (Categoria ${x.cat})`));
-  if(A.length>1){const r=DH.riepilogo(A);L.push(`   Valore totale: ${fmt(r.totale)} MO; Categoria più alta: ${r.categoriaAlta}`)}
-  if(t[c]>A.length)L.push(`   (elenco dettagliato limitato ai primi ${A.length} su ${t[c]})`)};
- L.push(t.name,'',`Punti Esperienza Totali: ${fmt(t.xp)} (GS: ${t.gs}; partecipanti: ${t.part})`,`Punti Esperienza individuali: ${fmt(Math.floor(t.xp/t.part))}`,
+ const lim=(c,len)=>{if(c>len)L.push(`(elenco dettagliato limitato ai primi ${len} su ${c})`)};
+ const tot=A=>{if(A.length>1){const r=DH.riepilogo(A);L.push(`Valore totale: ${fmt(r.totale)} MO; Categoria più alta: ${r.categoriaAlta}`)}};
+ L.push(t.name,'',`GS: ${t.gs}; partecipanti: ${t.part}`,`Punti Esperienza Totali: ${fmt(t.xp)} (${fmt(Math.floor(t.xp/t.part))} a testa)`,
   `Valore medio del tesoro per GS ${t.gs}: ${fmt(t.val)} MO (${fmt(aT)} MO a testa, arrotondato per difetto${t.molt>1?`; moltiplicatore del tesoro, già applicato: ×${t.molt}`:''})`,
   `Valore delle monete trovate: ${fmt(fl2(coinMO(t)))} MO`,'','Monete:');
- MONETE.forEach(([k,l])=>L.push(`- ${l}: ${fmt(t.monete[k])}`));
  const parts=MONETE.map(([k])=>[k.toUpperCase(),t.monete[k]]).filter(x=>x[1]>0);
- if(parts.length){L.push('',`Suddivisione delle monete (${t.part} partecipanti):`);parts.forEach(([n,v])=>{const r=v%t.part;L.push(`- ${n}: ${fmt(v)} in tutto, ${fmt(Math.floor(v/t.part))} a testa${r?` (avanzo: ${r})`:''}`)})}else L.push('','Nessuna moneta da dividere.');
- L.push('','Beni:',`- Gemme: ${t.gemme}`);lst('gemme','gemmeList','Gemma');L.push(`- Oggetti d’arte: ${t.arte}`);
- {const N=t.arteList,A=t.arteAlt,all=N.concat(A);
-  all.forEach((x,i)=>{L.push(`   Oggetto d’Arte${all.length>1?' '+(i+1):''}: ${x.nome}, ${fmt(x.val)} MO (Categoria ${x.cat})`);
-   if(x.alt){L.push(`      Tipo: ${x.tipo}; Specifico: ${x.spec}`);x.opz.forEach((p,k)=>L.push(`      Opzione ${ROM3[k]}: materiale robusto: ${p.rob}; materiale fragile: ${p.fra}; scena dipinta: ${p.scena}; abbellimento: ${p.abb}`));L.push(`      Dimensioni: ${x.dim}`,'      (R = Materiale Robusto / F = Materiale Fragile)')}});
-  if(all.length>1){const r=DH.riepilogo(all);L.push(`   Valore totale: ${fmt(r.totale)} MO; Categoria più alta: ${r.categoriaAlta}`)}
-  if(t.arte>all.length)L.push(`   (elenco dettagliato limitato ai primi ${all.length} su ${t.arte})`)}
- L.push('','Oggetti:');OGG.forEach(([k,l])=>L.push(`- ${l}: ${t.oggetti[k]}`));
+ if(parts.length)parts.forEach(([n,v])=>{const r=v%t.part;L.push(`${n}: ${fmt(v)} in tutto, ${fmt(Math.floor(v/t.part))} a testa${r?` (avanzo: ${r})`:''}`)});else L.push('Nessuna moneta da dividere.');
+ L.push('','Gemme:');const G=t.gemmeList;
+ if(!G.length)L.push('Nessuna gemma.');else{G.forEach((x,i)=>L.push(`${numL(i+1,G.length)}${x.nome}, ${fmt(x.val)} MO (Categoria ${x.cat})`));tot(G);lim(t.gemme,G.length)}
+ L.push('','Oggetti d’Arte:');const all=t.arteList.concat(t.arteAlt);
+ if(!all.length)L.push('Nessun oggetto d’arte.');else{
+  all.forEach((x,i)=>{L.push(`${numL(i+1,all.length)}${x.nome}, ${fmt(x.val)} MO (Categoria ${x.cat})`);
+   if(x.alt){L.push(`   Tipo: ${x.tipo}; Specifico: ${x.spec}`);x.opz.forEach((p,k)=>L.push(`   Opzione ${ROM3[k]}: materiale robusto: ${p.rob}; materiale fragile: ${p.fra}; scena dipinta: ${p.scena}; abbellimento: ${p.abb}`));L.push(`   Dimensioni: ${x.dim}`,'   (R = Materiale Robusto / F = Materiale Fragile)')}});
+  tot(all);lim(t.arte,all.length)}
+ L.push('','Oggetti comuni:');const C=t.comuniList;
+ if(!C.length)L.push('Nessun oggetto comune.');else{C.forEach((x,i)=>L.push(`${numL(i+1,C.length)}${x}`));lim(t.oggetti.comuni,C.length)}
+ L.push('','Oggetti magici:');const M=MAGICI.filter(([k])=>t.oggetti[k]>0);
+ if(M.length)M.forEach(([k,l])=>L.push(`${l}: ${t.oggetti[k]}`));else L.push('Nessun oggetto magico.');
  if(t.notes.trim())L.push('','Note:',t.notes.trim());
  return L.join('\n')}
 const nrow=(l,k,v)=>`<label class="fr"><span>${l}</span><input type="number" inputmode="numeric" min="0" data-sel data-t="${k}" value="${v}"></label>`;
@@ -176,14 +208,19 @@ function render(){
   <p class="mu"><b>Nota:</b> <i>non assegnare Punti Esperienza per GS inferiori di 10 al livello di un personaggio.</i></p>
   <button class="big pri" data-a="make">Genera</button></div>`}
  else if(v==='treasure'){const x=S.treasures[V.id];t=x.name;
-  h=`<div class="pad"><label class="fr"><span>Nome</span><input data-t="name" value="${esc(x.name)}" maxlength="80"></label>
-  <div class="btns"><button data-a="tcopy">Copia testo</button><button data-a="texp">Esporta codice</button></div>
-  <div id="d1"></div>${nrow('Partecipanti','part',x.part)}
-  <h2>Monete</h2>${MONETE.map(([k,l])=>nrow(l,'m:'+k,x.monete[k])).join('')}<div id="d2"></div>
-  <h2>Beni</h2>${nrow('Gemme','gemme',x.gemme)}<div id="d3"></div>${nrow('Oggetti d’arte','arte',x.arte)}<div id="d4"></div>
-  <h2>Oggetti</h2>${OGG.map(([k,l])=>nrow(l,'o:'+k,x.oggetti[k])).join('')}
-  <h2>Note</h2><textarea data-t="notes" placeholder="Annotazioni sul tesoro">${esc(x.notes)}</textarea>
-  <div class="btns" style="margin-top:16px"><button class="dng" data-a="delcur">Elimina questo tesoro</button></div></div>`}
+  const op=(id,d)=>(TS[id]===undefined?d:TS[id])?' open':'';
+  const box=(id,lab,inner)=>`<details class="card" id="${id}"${op(id,true)}><summary>${lab}</summary><div class="res" id="${inner}"></div></details>`;
+  h=`<div class="pad tz"><div class="btns"><button data-a="tcopy">Copia testo</button><button data-a="texp">Esporta codice</button></div>
+  <label class="fr"><span>Nome</span><input data-t="name" value="${esc(x.name)}" maxlength="80"></label>
+  <details class="card" id="s-info"${op('s-info',false)}><summary><span id="si-l"></span></summary><div class="res" id="dI"></div></details>
+  <details class="card" id="s-edit"${op('s-edit',false)}><summary>Modifica dettagli del tesoro</summary><div class="bx">
+   <div class="hint">Il tesoro viene modificato immediatamente quando si altera un valore.</div>
+   ${nrow('Partecipanti','part',x.part)}${MONETE.map(([k,l])=>nrow(l,'m:'+k,x.monete[k])).join('')}
+   ${nrow(`Gemme (max ${DH.MAX_GEMME})`,'gemme',x.gemme)}${nrow(`Oggetti d’arte (max ${DH.MAX_ARTE})`,'arte',x.arte)}
+   ${OGG.map(([k,l])=>nrow(k==='comuni'?`${l} (max ${DH.MAX_COMUNI})`:l,'o:'+k,x.oggetti[k])).join('')}
+   <label class="fr col"><span>Note</span><textarea data-t="notes" placeholder="Annotazioni sul tesoro">${esc(x.notes)}</textarea></label></div></details>
+  ${box('s-m','Monete','dM')}${box('s-g','Gemme','dG')}${box('s-a','Oggetti d’Arte','dA')}${box('s-c','Oggetti comuni','dC')}${box('s-mg','Oggetti magici','dMg')}
+  <div class="btns" style="margin-top:10px"><button class="dng" data-a="delcur">Elimina questo tesoro</button></div></div>`}
  else if(v==='settings'){t='Impostazioni';const s=S.settings;
   h=`<div class="pad"><div class="card"><div class="hd" data-a="tog" data-id="themes"><div class="nm"><b>Temi</b></div></div>${OPEN.has('themes')?`<div class="ed"><div class="btns">${THEMES.map(x=>`<button data-a="theme" data-id="${x.id}" class="${Object.keys(x.c).every(k=>s[k]===x.c[k])?'pri':''}">${x.name}</button>`).join('')}</div></div>`:''}</div>
   <h2>Colori</h2>${COLS.map(([l,k])=>`<label class="cf">${l}<span><input type="color" data-s="${k}" value="${s[k]}"><input data-s="${k}" value="${s[k]}" maxlength="7"></span></label>`).join('')}
@@ -208,8 +245,8 @@ function make(){
  const g=DH.interpretaGS($('#f-gs').value),part=cl($('#f-part').value,1,9999,4),molt=cl($('#f-molt').value,1,9999,1);
  const r=DH.generaTesoro({gs:g.etichetta,partecipanti:part,moltiplicatore:molt});
  const t={id:uid(),name:autoName(g.etichetta,Object.values(S.treasures)),auto:true,created:new Date().toISOString(),gs:g.etichetta,part,molt,xp:r.esperienza,val:r.valoreTesoro,
-  monete:r.monete,gemme:r.beni.gemme,arte:r.beni.oggettiArte,oggetti:r.oggetti,gemmeList:r.beni.listaGemme,arteList:r.beni.listaArte,arteAlt:[],notes:''};
- S.treasures[t.id]=t;save();V={v:'treasure',id:t.id};OPEN=new Set();history.replaceState({},'');scrollTo(0,0);render()}
+  monete:r.monete,gemme:r.beni.gemme,arte:r.beni.oggettiArte,oggetti:r.oggetti,gemmeList:r.beni.listaGemme,arteList:r.beni.listaArte,arteAlt:[],comuniList:r.listaComuni,notes:''};
+ S.treasures[t.id]=t;save();V={v:'treasure',id:t.id};OPEN=new Set();TS={};history.replaceState({},'');scrollTo(0,0);render()}
 
 // ---- click ----
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
@@ -250,14 +287,15 @@ document.addEventListener('change',e=>{const t=e.target,d=t.dataset;
   else{const v=n0(t.value);t.value=v;
    if(k==='part'){x.part=Math.max(1,v);t.value=x.part}
    else if(k.startsWith('m:'))x.monete[k.slice(2)]=v;
-   else if(k.startsWith('o:'))x.oggetti[k.slice(2)]=v;
-   else{x[k]=v;if(k==='gemme'||k==='arte'){if(syncLists(x))paintLists()}}paintDerived()}
+   else if(k.startsWith('o:')){x.oggetti[k.slice(2)]=v;syncLists(x);paintLists()}
+   else{x[k]=v;if(k==='gemme'||k==='arte'){syncLists(x);paintLists()}}paintDerived()}
   return save()}});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='f-gs')t.value=DH.interpretaGS(t.value).etichetta;
  if(t.id==='f-part')t.value=cl(t.value,1,9999,4);
  if(t.id==='f-molt')t.value=cl(t.value,1,9999,1)});
 
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.tagName==='DETAILS'&&d.id)TS[d.id]=d.open},true);
 // selezione automatica del contenuto dei campi numerici al tap
 let selNext=null;
 document.addEventListener('focusin',e=>{const t=e.target;if(t.matches&&t.matches('input[data-sel]')){selNext=t;setTimeout(()=>{try{t.select()}catch(x){}},0)}});
@@ -283,7 +321,7 @@ function impTesoro(txt){let d;try{d=JSON.parse(txt)}catch(e){}
  if(!d||d.app!=='dragons-hoard'||d.tipo!=='tesoro'||!d.data)return toast('Codice del tesoro non valido');
  const t=fixT(d.data);if(!t)return toast('Codice del tesoro non valido');
  const others=Object.values(S.treasures);t.name=t.auto?autoName(t.gs,others):uniq(t.name,S.treasures);
- S.treasures[t.id]=t;save();V={v:'treasure',id:t.id};OPEN=new Set();history.replaceState({},'');scrollTo(0,0);render();toast('Tesoro importato')}
+ S.treasures[t.id]=t;save();V={v:'treasure',id:t.id};OPEN=new Set();TS={};history.replaceState({},'');scrollTo(0,0);render();toast('Tesoro importato')}
 function imp(txt){let d;try{d=JSON.parse(txt)}catch(e){}
  if(d&&d.tipo==='tesoro')return toast('Questo è il codice di un singolo tesoro: usa “Importa tesoro” nella schermata principale');
  const s=d&&d.data;if(!s||typeof s!=='object'||!(s.settings||s.treasures))return toast('Backup non valido');const n=norm(clone(s));

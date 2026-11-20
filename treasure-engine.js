@@ -149,6 +149,7 @@
       valoreMoneteMO: valoreMoneteMO,
       beni: { gemme: gemme, oggettiArte: oggArte, listaGemme: generaGemme(gemme, rng), listaArte: generaOggettiArte(oggArte, rng) },
       oggetti: { comuni: comuni, minori: minori, medi: medi, maggiori: maggiori },
+      listaComuni: generaOggettiComuni(comuni, rng),
       categoriaOggetti: categoria
     };
   }
@@ -259,7 +260,27 @@
     return { alt: true, nome: 'Oggetto personalizzato', val: val, cat: cat, tipo: r(tipo), spec: r(spec === 0 ? '—' : spec), opz: opz, dim: r(pesca(P + ' Dimensioni')) };
   }
 
-  const API = { generaTesoro, generaPersonalizzato, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
+  const MAX_COMUNI = 50;
+  /** Oggetti comuni (macro "Oggetti Comuni"): ogni elemento è una stringa */
+  function generaOggettiComuni(n, rng) {
+    rng = rng || Math.random;
+    const eq = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+    const out = [];
+    for (let k = 0; k < Math.min(n, MAX_COMUNI); k++) {
+      let c = pescaTabella('Oggetti Comuni', rng);
+      if (c === null) { out.push('(tabelle non disponibili)'); continue; }
+      if (eq(c, 'Strumento O Equipaggiamento')) { const v = pescaTabella('Strumenti O Equipaggiamenti', rng); if (v !== null) c = v; }
+      let nome = c;
+      if (eq(c, 'Strumento Musicale Comune') || eq(c, 'Strumento Musicale Perfetto')) {
+        const m = pescaTabella('Oggetti Arte Casuali Strumento Musicale', rng);
+        nome = (m === null ? c : m) + ' (' + c + ')';
+      }
+      out.push(risolvi(nome, rng));
+    }
+    return out;
+  }
+
+  const API = { generaTesoro, generaOggettiComuni, MAX_COMUNI, generaPersonalizzato, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.DragonsHoard = Object.assign(root.DragonsHoard || {}, API);
 })(typeof window !== 'undefined' ? window : globalThis);
