@@ -260,27 +260,89 @@
     return { alt: true, nome: 'Oggetto personalizzato', val: val, cat: cat, tipo: r(tipo), spec: r(spec === 0 ? '—' : spec), opz: opz, dim: r(pesca(P + ' Dimensioni')) };
   }
 
-  const MAX_COMUNI = 50;
-  /** Oggetti comuni (macro "Oggetti Comuni"): ogni elemento è una stringa */
+  const MAX_COMUNI = 30;
+  const eqs = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+
+  /** "Candela (1d4)" -> "Candela: 3 (1d4)"; "Corda (1d20 x 1,5 m)" -> "Corda: 12 m (1d20 x 1,5 m)".
+   *  Il contenuto tra parentesi resta, così si vede anche il valore generabile. */
+  function espandiDadi(testo, rng) {
+    rng = rng || Math.random;
+    const m = /^(.*\S)\s*\((\d+)d(\d+)([^)]*)\)\s*$/.exec(testo);
+    if (!m) return testo;
+    const n = Number(m[2]), f = Number(m[3]), resto = m[4];
+    let unita = resto.split(';')[0].trim(), molt = 1;
+    const mm = /^x\s*([\d.,]+)\s*(.*)$/i.exec(unita);
+    if (mm) { molt = parseFloat(mm[1].replace(',', '.')); unita = mm[2].trim(); }
+    let tot = 0;
+    for (let k = 0; k < n; k++) tot += Math.floor(rng() * f) + 1;
+    const SING = { ampolle: 'ampolla', boccette: 'boccetta', bastoni: 'bastone', borse: 'borsa', pietre: 'pietra', tizzoni: 'tizzone', verghe: 'verga', vasetti: 'vasetto',
+      fiale: 'fiala', sacchetti: 'sacchetto', flaconi: 'flacone', palline: 'pallina', fogli: 'foglio', pezzi: 'pezzo', 'utilizzi rimasti': 'utilizzo rimasto' };
+    if (tot * molt === 1 && SING[unita]) unita = SING[unita]; // 1 ampolla, non "1 ampolle"
+    const num = String(Math.round(tot * molt * 100) / 100).replace('.', ',');
+    return m[1] + ': ' + num + (unita ? ' ' + unita : '') + ' (' + m[2] + 'd' + m[3] + resto + ')';
+  }
+
+  // ---- Armi, armature e scudi casuali (macro "Arma Casuale" e "Armatura o Scudo Casuale") ----
+  function materialeMetallo(r100) {
+    return r100 === 96 ? 'Adamantio' : r100 === 97 ? 'Argento Alchemico' : r100 === 98 ? 'Ferro Freddo' : r100 === 99 ? 'Mithril' : r100 === 100 ? 'Scaglie di Drago' : 'Comune';
+  }
+  /** Restituisce un testo su più righe: la prima è il nome, le altre i dettagli */
+  function generaArma(rng) {
+    rng = rng || Math.random;
+    const d = f => Math.floor(rng() * f) + 1;
+    const nome = pescaTabella('Arma Casuale', rng);
+    if (nome === null) return '[tabella “Arma Casuale” mancante]';
+    const costoBonus = eqs(nome, 'Arco Corto Composito') ? 75 : eqs(nome, 'Arco Lungo Composito') ? 100 : 0;
+    const metallo = materialeMetallo(d(100));
+    const legno = d(100) >= 96 ? 'Legnoscuro' : 'Comune';
+    const po = d(100);
+    const potente = po >= 97 ? 5 : po >= 91 ? 4 : po >= 83 ? 3 : po >= 73 ? 2 : po >= 61 ? 1 : 0;
+    const perfetta = d(100) >= 76;
+    const t = d(138);
+    const taglia = t >= 138 ? 'Colossale' : t >= 136 ? 'Mastodontica' : t >= 131 ? 'Enorme' : t >= 121 ? 'Grande' : t >= 101 ? 'Piccola' : 'Media';
+    let det = 'Perfetta (se non magica): ' + (perfetta ? 'Sì' : 'No') + '; Metallo: ' + metallo + '; Legno: ' + legno;
+    if (costoBonus && potente > 0) det += '; Potente: +' + potente + ' (+' + costoBonus + ' MO x bonus; totale: +' + (potente * costoBonus) + ' MO)';
+    return risolvi(nome, rng) + ' (per creature di taglia ' + taglia + ')\n' + det;
+  }
+  function armaturaOScudo(tabella, perfettaLabel, rng) {
+    rng = rng || Math.random;
+    const d = f => Math.floor(rng() * f) + 1;
+    const nome = pescaTabella(tabella, rng);
+    if (nome === null) return '[tabella “' + tabella + '” mancante]';
+    const metallo = materialeMetallo(d(100));
+    const legno = d(100) >= 96 ? 'Legnoscuro' : 'Comune';
+    const chiodato = d(100) <= 10;
+    const perfetta = d(100) >= 76;
+    const t = d(100);
+    const taglia = t >= 99 ? 'Enorme' : t >= 91 ? 'Grande' : t >= 76 ? 'Piccola' : 'Media';
+    return risolvi(nome, rng) + ' (per creature di taglia ' + taglia + ')\n' + perfettaLabel + ' (se variabile): ' + (perfetta ? 'Sì' : 'No') +
+      '; Metallo: ' + metallo + '; Legno: ' + legno + '; Chiodatura: ' + (chiodato ? 'Chiodato' : 'No');
+  }
+  const generaArmatura = rng => armaturaOScudo('Armatura Casuale', 'Perfetta', rng);
+  const generaScudo = rng => armaturaOScudo('Scudo Casuale', 'Perfetto', rng);
+
+  /** Oggetti comuni (macro "Oggetti Comuni"): ogni elemento è una stringa (le righe successive alla prima sono dettagli) */
   function generaOggettiComuni(n, rng) {
     rng = rng || Math.random;
-    const eq = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
     const out = [];
     for (let k = 0; k < Math.min(n, MAX_COMUNI); k++) {
       let c = pescaTabella('Oggetti Comuni', rng);
       if (c === null) { out.push('(tabelle non disponibili)'); continue; }
-      if (eq(c, 'Strumento O Equipaggiamento')) { const v = pescaTabella('Strumenti O Equipaggiamenti', rng); if (v !== null) c = v; }
+      if (eqs(c, 'Strumento O Equipaggiamento')) { const v = pescaTabella('Strumenti O Equipaggiamenti', rng); if (v !== null) c = v; }
+      if (eqs(c, 'Armatura')) { out.push(generaArmatura(rng)); continue; }
+      if (eqs(c, 'Scudo')) { out.push(generaScudo(rng)); continue; }
+      if (eqs(c, 'Arma')) { out.push(generaArma(rng)); continue; }
       let nome = c;
-      if (eq(c, 'Strumento Musicale Comune') || eq(c, 'Strumento Musicale Perfetto')) {
+      if (eqs(c, 'Strumento Musicale Comune') || eqs(c, 'Strumento Musicale Perfetto')) {
         const m = pescaTabella('Oggetti Arte Casuali Strumento Musicale', rng);
         nome = (m === null ? c : m) + ' (' + c + ')';
       }
-      out.push(risolvi(nome, rng));
+      out.push(espandiDadi(risolvi(nome, rng), rng));
     }
     return out;
   }
 
-  const API = { generaTesoro, generaOggettiComuni, MAX_COMUNI, generaPersonalizzato, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
+  const API = { generaTesoro, generaOggettiComuni, generaArma, generaArmatura, generaScudo, espandiDadi, MAX_COMUNI, generaPersonalizzato, generaGemme, generaOggettiArte, riepilogo, risolvi, MAX_GEMME, MAX_ARTE, interpretaGS, scalaGS, esperienzaPerGS, valoreTesoroPerGS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.DragonsHoard = Object.assign(root.DragonsHoard || {}, API);
 })(typeof window !== 'undefined' ? window : globalThis);
